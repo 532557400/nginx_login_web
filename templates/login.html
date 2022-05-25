@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+    <title>登录认证 - DevOps后台管理系统</title>
+    <link rel="icon" href="favicon.ico" type="image/ico">
+    <meta name="keywords" content="Admin后台管理系统">
+    <meta name="description" content="Admin V4是一个后台管理系统，基于Bootstrap v4.4.1。">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="/static/css/animate.min.css" rel="stylesheet">
+    <link href="/static/css/style.min.css" rel="stylesheet">
+    <style>
+        .login-form .has-feedback {
+            position: relative;
+        }
+
+        .login-form .has-feedback .form-control {
+            padding-left: 36px;
+        }
+
+        .login-form .has-feedback .mdi {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: auto;
+            width: 36px;
+            height: 36px;
+            line-height: 36px;
+            z-index: 4;
+            color: #dcdcdc;
+            display: block;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        .login-form .has-feedback.row .mdi {
+            left: 15px;
+        }
+    </style>
+</head>
+
+<body class="center-vh" style="background-image: url(/static/images/login-bg-2.jpg); background-size: cover;">
+<div class="card card-shadowed p-5 w-420 mb-0 mr-2 ml-2">
+    <div class="text-center mb-3">
+        <h2 class="text-muted">导航登录认证</h2>
+    </div>
+
+    <form action="#!" method="post" class="login-form" id="loginform">
+        <div class="form-group has-feedback">
+            <span class="mdi mdi-account" aria-hidden="true"></span>
+            <input type="text" class="form-control" id="username" placeholder="用户名">
+        </div>
+
+        <div class="form-group has-feedback">
+            <span class="mdi mdi-lock" aria-hidden="true"></span>
+            <input type="password" class="form-control" id="password" placeholder="密码">
+        </div>
+
+        <div class="form-group has-feedback row">
+            <div class="col-7">
+                <span class="mdi mdi-check-all form-control-feedback" aria-hidden="true"></span>
+                <input type="text" name="captcha" id="captcha" class="form-control" placeholder="验证码">
+            </div>
+            <div class="col-5 text-right">
+                <img src="{{img_captcha}}" class="pull-right" id="img_captcha" style="cursor: pointer;"
+                     onclick="change_img()" title="点击刷新" alt="captcha">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="custom-control custom-checkbox">
+                <input type="checkbox" class="custom-control-input" id="rememberme">
+                <label class="custom-control-label not-user-select" for="rememberme">30天内免登录</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button>
+        </div>
+    </form>
+
+<!--    <p class="text-center text-muted mb-0">Copyright © 2020 <a href="#!">IT书包</a>. All right reserved</p>-->
+</div>
+<script type="text/javascript" src="/static/js/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/bootstrap-notify.min.js"></script>
+<script type="text/javascript">
+    function change_img() {
+        var img = document.getElementById('img_captcha');
+        var ajax = new XMLHttpRequest()
+        ajax.open('get', '/captcha')
+        ajax.send()
+        ajax.onreadystatechange = function () {
+            if (ajax.readyState == 4 && ajax.status == 200) {
+                console.log(ajax.responseText); // 输入相应的内容
+                img.src = ajax.responseText
+            }
+        }
+    };
+
+    $(document).ready(function () {
+        $("#bt_login").click(function () {
+            var btn_target = $(this);
+            if (btn_target.hasClass("disabled")) {
+                lightyear.notify('正在处理中，请不要重复提交~~', 'warning', 5000, 'mdi mdi-emoticon-happy', 'top', 'center');
+                return;
+            }
+
+            var login_name = $("#username").val();
+            var login_pwd = $("#password").val();
+            var captcha = $("#captcha").val();
+            if (login_name == undefined || login_name.length < 1) {
+                $.notify(
+                    {
+                        message: 'Hello World'
+                    },{
+                        type: 'danger'
+                    }
+                );
+                lightyear.notify('请输入正确的用户名~~', 'warning', 3000);
+                return false;
+            }
+            if (login_pwd == undefined || login_pwd.length < 5) {
+                lightyear.notify('请输入正确的密码~~', 'warning', 3000);
+
+                return false;
+            }
+            if (captcha == undefined || captcha.length < 4) {
+                lightyear.notify('请输入正确的密码~~', 'warning', 3000);
+                return false;
+            }
+            btn_target.addClass("disabled");
+            $.ajax({
+                url: "/login",
+                type: "POST",
+                data: {'login_name': login_name, 'login_pwd': login_pwd},
+                dataType: 'json',
+                success: function (res) {
+                    btn_target.removeClass("disabled");
+                    var callback = null;
+                    if (res.code == 200) {
+                        callback = function () {
+                            window.location.href = "/";
+                        }
+                    } else {
+                        callback = function () {
+                            lightyear.notify(res.msg, 'warning', 3000);
+                        }
+                    }
+                    callback()
+                }
+            })
+
+        });
+
+    });
+</script>
+</body>
+</html>
