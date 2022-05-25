@@ -47,7 +47,7 @@
         <h2 class="text-muted">导航登录认证</h2>
     </div>
 
-    <form action="#!" method="post" class="login-form" id="loginform">
+    <!--<form action="#!" method="post" class="login-form" id="loginform">-->
         <div class="form-group has-feedback">
             <span class="mdi mdi-account" aria-hidden="true"></span>
             <input type="text" class="form-control" id="username" placeholder="用户名">
@@ -79,7 +79,7 @@
         <div class="form-group">
             <button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button>
         </div>
-    </form>
+	<!--</form>-->
 
 <!--    <p class="text-center text-muted mb-0">Copyright © 2020 <a href="#!">IT书包</a>. All right reserved</p>-->
 </div>
@@ -134,7 +134,7 @@
             $.ajax({
                 url: "/login",
                 type: "POST",
-                data: {'login_name': login_name, 'login_pwd': login_pwd},
+                data: {'username': login_name, 'password': login_pwd, 'captcha': captcha},
                 dataType: 'json',
                 success: function (res) {
                     btn_target.removeClass("disabled");

@@ -81,15 +81,13 @@ def get_captcha():
     mc = Captcha()
     session['captcha'] = mc.code
     print(session['captcha'])
-    print(mc.base64_png)
+    #print(mc.base64_png)
     return mc.base64_png
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
 
-    mc = Captcha()
-    session['captcha'] = mc.code
 
     sitename = ''
     url = ''
@@ -101,20 +99,31 @@ def login():
         return resp, 200
 
     if request.method == 'GET':
+        mc = Captcha()
+        session['captcha'] = mc.code
 
         print(mc.code)
         return render_template('login.html', img_captcha=mc.base64_png, sitename=sitename, url=url)
 
     if request.method == 'POST':
-        if not request.form.get('captcha').upper() == session['captcha'].upper():
+        mc = Captcha()
+
+        print("------------------")
+        print(request.form)
+        print(request.form['captcha'].upper())
+        print(session['captcha'].upper())
+        if not request.form['captcha'].upper() == session['captcha'].upper():
+            print("no")
+        #if not request.form.get('captcha').upper() == session['captcha'].upper():
             print('request: ' + request.form.get('captcha').upper())
             print('session: ' + session['captcha'].upper())
             flash('验证码错误，请重新输入', 'danger')
 
 
+            session['captcha'] = mc.code
             return render_template('login.html', img_captcha=mc.base64_png, sitename=sitename, url=url)
 
-        username = request.form.get('username') if 'useranme' in request.form else ''
+        username = request.form.get('username') if 'username' in request.form else ''
         password = request.form.get('password') if 'password' in request.form else ''
 
         user = User(username, password)
@@ -125,7 +134,8 @@ def login():
             return response
         else:
             flash('登陆失败，请重试！', 'danger')
-            app.logger.warn(request.form['username'] + 'login error')
+            app.logger.warning(request.form['username'] + 'login error')
+            session['captcha'] = mc.code
             return render_template('login.html', img_captcha=mc.base64_png, sitename=sitename, url=url)
 
 
