@@ -72,7 +72,7 @@
         <div class="form-group">
             <div class="custom-control custom-checkbox">
                 <input type="checkbox" class="custom-control-input" id="rememberme">
-                <label class="custom-control-label not-user-select" for="rememberme">30天内免登录</label>
+                <label class="custom-control-label not-user-select" for="rememberme">记住密码</label>
             </div>
         </div>
 
@@ -102,19 +102,10 @@
     $(document).ready(function () {
 
 
+	//如果浏览器支持localStorage
 	if(window.localStorage){
-					            //主逻辑业务 
 
-		//for(var i=localStorage.length - 1 ; i >=0; i--){  
-		//      if(localStorage.key(i)=="username"){  
-		//			         $("#username").val(localStorage.getItem(localStorage.key(i)));
-		//			       }  
-		//        if(localStorage.key(i)=="password"){  
-		//			        $("#password").val(localStorage.getItem(localStorage.key(i)));
-		//			     }  
-		//     }
-
-
+		//本地存储中存在账号和密码时,加载出来,并勾选记住密码
 		 if (localStorage.username && localStorage.password) {
 			$("#username").val(localStorage.username);
 			$("#password").val(localStorage.password);
@@ -122,10 +113,13 @@
 		  }
 	}
 
+
+	//记住密码选择框改动时
 	$("#rememberme").change(function(){
         	var storage = window.localStorage;
 
 		var opt=$("#myselect").val();
+		//如果勾上,将账号密码存入本地存储,否则清空
 		if ($('#rememberme')[0].checked){
          		var username = $("#username").val();
          		var password = $("#password").val();
