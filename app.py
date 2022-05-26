@@ -147,6 +147,8 @@ def logout():
     return redirect('/')
 
 
+
+
 # 获取服务状态
 @app.route('/dts/item/<name>/<status>', methods=["GET"])
 def get_item_status(name, status):

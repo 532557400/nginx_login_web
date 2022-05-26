@@ -103,7 +103,7 @@
         $("#bt_login").click(function () {
             var btn_target = $(this);
             if (btn_target.hasClass("disabled")) {
-                lightyear.notify('正在处理中，请不要重复提交~~', 'warning', 5000, 'mdi mdi-emoticon-happy', 'top', 'center');
+                $.notify({message: '正在处理中，请不要重复提交~~'},{type: 'warning', placement: {from: "top", align: "center"}});
                 return;
             }
 
@@ -111,23 +111,17 @@
             var login_pwd = $("#password").val();
             var captcha = $("#captcha").val();
             if (login_name == undefined || login_name.length < 1) {
-                $.notify(
-                    {
-                        message: 'Hello World'
-                    },{
-                        type: 'danger'
-                    }
-                );
-                lightyear.notify('请输入正确的用户名~~', 'warning', 3000);
-                return false;
-            }
-            if (login_pwd == undefined || login_pwd.length < 5) {
-                lightyear.notify('请输入正确的密码~~', 'warning', 3000);
+                $.notify({message: '账号输入错误~~'},{type: 'warning'});
 
                 return false;
             }
+            if (login_pwd == undefined || login_pwd.length < 6) {
+                $.notify({message: '密码输入错误~~'},{type: 'warning'});
+                return false;
+            }
             if (captcha == undefined || captcha.length < 4) {
-                lightyear.notify('请输入正确的密码~~', 'warning', 3000);
+                $.notify({message: '验证码输入错误~~'},{type: 'warning'});
+
                 return false;
             }
             btn_target.addClass("disabled");
@@ -145,7 +139,7 @@
                         }
                     } else {
                         callback = function () {
-                            lightyear.notify(res.msg, 'warning', 3000);
+                            $.notify({message: res.msg},{type: 'warning'});
                         }
                     }
                     callback()
