@@ -1,6 +1,5 @@
 import json
 import os.path
-from datetime import timedelta
 
 import requests
 from flask import Flask, request, session, make_response, redirect, render_template, url_for, flash
@@ -13,9 +12,7 @@ app = Flask(__name__)
 
 
 
-# session
-app.config["SECRET_KEY"] = "123456"
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+
 app.secret_key = '123456'
 
 
@@ -31,13 +28,15 @@ res = {'code': 200, 'msg': '成功', 'data': {}}
 PROFILE_PATH = os.path.dirname(os.path.abspath(__file__))
 PROFILE_FILE = os.path.join(PROFILE_PATH, "profiles.json")
 
-CONFIG_PATH = os.path.join(PROFILE_PATH + "config/base_setting.py")
+CONFIG_PATH = os.path.join(PROFILE_PATH, "config/base_setting.py")
 # 配置文件分为 本地和测试两个
-LOCAL_CONFIG = os.path.join(PROFILE_PATH + "config/local_setting.py")
-TEST_CONFIG = os.path.join(PROFILE_PATH + "config/test_setting.py")
+LOCAL_CONFIG = os.path.join(PROFILE_PATH, "config/local_setting.py")
+TEST_CONFIG = os.path.join(PROFILE_PATH, "config/test_setting.py")
+# print(LOCAL_CONFIG, TEST_CONFIG)
 TYPE_CONFIG = LOCAL_CONFIG if os.path.exists(LOCAL_CONFIG) else TEST_CONFIG
 
-app.config.from_pyfile(CONFIG_PATH)
+if os.path.exists(CONFIG_PATH):
+    app.config.from_pyfile(CONFIG_PATH)
 
 if os.path.exists(TYPE_CONFIG):
     app.config.from_pyfile(TYPE_CONFIG)
