@@ -38,30 +38,66 @@
         .login-form .has-feedback.row .mdi {
             left: 15px;
         }
+        .error { color: red }
+        .success {color: blue }
     </style>
 </head>
 
 <body class="center-vh" style="background-image: url(/static/images/login-bg-2.jpg); background-size: cover;">
 <div class="card card-shadowed p-5 w-420 mb-0 mr-2 ml-2">
     <div class="text-center mb-3">
+        {% if site_name %}
+        <h2 class="text-muted">{{site_name}}认证</h2>
+        {% else %}
         <h2 class="text-muted">导航登录认证</h2>
+        {% endif %}
+        <span style="color:brown;font-size:12px">警告: 内部系统，非授权不得访问！</span>
     </div>
+    {% if get_flashed_messages() %}
+    <!--p class="error-text" id="error">
+        <ul style="list-style: none;">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+            <li class="{% if category %} text-{{category}} {% else %} text-danger{% endif %}">{{message}}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith %}
+    </p-->
 
+    {% endif %}
     <form action="#!" method="post" class="login-form" id="loginform">
+
+
         <div class="form-group has-feedback">
+
+
             <span class="mdi mdi-account" aria-hidden="true"></span>
-            <input type="text" class="form-control" id="username" placeholder="用户名">
+            {{ form.username(type="text", class="form-control", placeholder="用户名") }}
+            {% for err in form.username.errors %}
+            <p style="color: red">{{ err }}</p>
+            {% endfor %}
+            <!--input type="text" class="form-control" id="username" placeholder="用户名"-->
         </div>
 
         <div class="form-group has-feedback">
             <span class="mdi mdi-lock" aria-hidden="true"></span>
-            <input type="password" class="form-control" id="password" placeholder="密码">
+            {{ form.password(type="password", class="form-control", placeholder="密码") }}
+            {% for err in form.password.errors %}
+            <p style="color: red">{{ err }}</p>
+            {% endfor %}
+            <!--input type="password" class="form-control" id="password" placeholder="密码"-->
         </div>
 
         <div class="form-group has-feedback row">
             <div class="col-7">
                 <span class="mdi mdi-check-all form-control-feedback" aria-hidden="true"></span>
-                <input type="text" name="captcha" id="captcha" class="form-control" placeholder="验证码">
+                {{ form.captcha(type="text", class="form-control", placeholder="验证码") }}
+                {% for err in form.captcha.errors %}
+                <p style="color: red">{{ err }}</p>
+                {% endfor %}
+                <!--input type="text" name="captcha" id="captcha" class="form-control" placeholder="验证码"-->
             </div>
             <div class="col-5 text-right">
                 <img src="{{img_captcha}}" class="pull-right" id="img_captcha" style="cursor: pointer;"
@@ -77,15 +113,20 @@
         </div>
 
         <div class="form-group">
-            <button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button>
+            {{ form.csrf_token }}
+            {{ form.submit(class="btn btn-block btn-primary", id="bt_login")}}
+            <!--button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button-->
         </div>
     </form>
-
-    <!--    <p class="text-center text-muted mb-0">Copyright © 2020 <a href="#!">IT书包</a>. All right reserved</p>-->
+    <p class="text-center text-muted mb-0 flash"></p>
 </div>
 <script type="text/javascript" src="/static/js/jquery.min.js"></script>
 <script type="text/javascript" src="/static/js/bootstrap-notify.min.js"></script>
 <script type="text/javascript">
+    $('form').submit(function (){
+        return false;
+    });
+
     function change_img() {
         var img = document.getElementById('img_captcha');
         var ajax = new XMLHttpRequest()
@@ -100,6 +141,8 @@
     };
 
     $(document).ready(function () {
+
+        document.getElementById('captcha').value='';
 
 
         //如果浏览器支持localStorage
@@ -134,6 +177,9 @@
 
 
         $("#bt_login").click(function () {
+
+
+            //用POST方法提交，把整个form提交到后台
             var btn_target = $(this);
             if (btn_target.hasClass("disabled")) {
                 $.notify({message: '正在处理中，请不要重复提交~~'}, {type: 'warning', placement: {from: "top", align: "center"}});
@@ -143,20 +189,20 @@
             var login_name = $("#username").val();
             var login_pwd = $("#password").val();
             var captcha = $("#captcha").val();
-            if (login_name == undefined || login_name.length < 1) {
-                $.notify({message: '账号输入错误~~'}, {type: 'warning'});
-
-                return false;
-            }
-            if (login_pwd == undefined || login_pwd.length < 6) {
-                $.notify({message: '密码输入错误~~'}, {type: 'warning'});
-                return false;
-            }
-            if (captcha == undefined || captcha.length < 4) {
-                $.notify({message: '验证码输入错误~~'}, {type: 'warning'});
-
-                return false;
-            }
+            // if (login_name == undefined || login_name.length < 1) {
+            //     $.notify({message: '账号输入错误~~'}, {type: 'warning'});
+            //
+            //     return false;
+            // }
+            // if (login_pwd == undefined || login_pwd.length < 6) {
+            //     $.notify({message: '密码输入错误~~'}, {type: 'warning'});
+            //     return false;
+            // }
+            // if (captcha == undefined || captcha.length < 4) {
+            //     $.notify({message: '验证码输入错误~~'}, {type: 'warning'});
+            //
+            //     return false;
+            // }
             btn_target.addClass("disabled");
             $.ajax({
                 url: "/login",
@@ -182,6 +228,42 @@
         });
 
     });
+    // function token() {
+    //     var url = "http://" + document.domain + ":" + location.port;
+    //     console.log(url);
+    //     var username = document.getElementById("username").value;
+    //     var password = document.getElementById("password").value;
+    //     var captcha = document.getElementById("captcha").value;
+    //     var fd = new FormData();
+    //     fd.append("username", username);
+    //     fd.append("password", password);
+    //     fd.append("captcha", captcha);
+    //     xhr = new XMLHttpRequest();
+    //     xhr.open("POST", "/login");
+    //     xhr.send(fd);
+    //     xhr.onreadystatechange = function (res) {
+    //         if (xhr.readyState == 4 && xhr.status == 200) {
+    //             // 登录成功则成功跳转
+    //             console.log("success");
+    //             var token = xhr.response;
+    //             console.log(token);
+    //             setCookie("token", token);
+    //             location.href = url;
+    //         } if (xhr.readyState == 4 && xhr.status == 403) {
+    //             // 登录失败则重新登录
+    //             var error = xhr.response; $(".flash")[0].innerHTML = error;
+    //             $(".flash").fadeOut(3000);
+    //             setTimeout(function () {
+    //                 location.href = url + "/login";
+    //                 }, 2000);
+    //         }
+    //     }
+    // } function setCookie(name, value) {
+    //     // 设置token有效期为60min
+    //     const exp = new Date();
+    //     exp.setTime(exp.getTime() + 60 * 60 * 1000);
+    //     document.cookie = name + "=" + value + ";expires=" + exp.toGMTString();
+    // }
 </script>
 </body>
 </html>

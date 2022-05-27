@@ -27,7 +27,7 @@ class Captcha:
         # if not os.path.exists(path):
         #     os.makedirs(path)
         # self.img = path + str(now) + '.png'
-        img = ImageCaptcha(width=100, height=30, font_sizes=(30, 35, 28))  # 实例化ImageCaptcha类
+        img = ImageCaptcha(width=110, height=40, font_sizes=(30, 35, 28))  # 实例化ImageCaptcha类
         # 这是ImageCaptcha自带的初始化内容width=160, height=60, fonts=None, font_sizes=None，可以自己设置
 
         # RGB = (38, 38, 0)  # 字体色
