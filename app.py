@@ -11,10 +11,14 @@ from mycaptcha import Captcha
 
 app = Flask(__name__)
 
+
+
 # session
 app.config["SECRET_KEY"] = "123456"
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.secret_key = '123456'
+
+
 
 app.debug = True
 
@@ -27,6 +31,16 @@ res = {'code': 200, 'msg': '成功', 'data': {}}
 PROFILE_PATH = os.path.dirname(os.path.abspath(__file__))
 PROFILE_FILE = os.path.join(PROFILE_PATH, "profiles.json")
 
+CONFIG_PATH = os.path.join(PROFILE_PATH + "config/base_setting.py")
+# 配置文件分为 本地和测试两个
+LOCAL_CONFIG = os.path.join(PROFILE_PATH + "config/local_setting.py")
+TEST_CONFIG = os.path.join(PROFILE_PATH + "config/test_setting.py")
+TYPE_CONFIG = LOCAL_CONFIG if os.path.exists(LOCAL_CONFIG) else TEST_CONFIG
+
+app.config.from_pyfile(CONFIG_PATH)
+
+if os.path.exists(TYPE_CONFIG):
+    app.config.from_pyfile(TYPE_CONFIG)
 
 # 用户密码加密认证
 class User(UserMixin):
@@ -91,8 +105,7 @@ def login():
 
     sitename = ''
     url = ''
-    print("NSREDIRECTSITENAME", request.cookies.get('NSREDIRECTSITENAME'))
-    print("NSREDIRECT", request.cookies.get('NSREDIRECT'))
+
 
     if current_user and not current_user.is_anonymous:
         resp = make_response('<meta http-equiv="refresh" content="3; url=' + '' + '" />你已经登陆过！不要重复登陆！')
@@ -166,7 +179,7 @@ def get_item_status(name, status):
     }
 
     response = requests.post(
-        'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7f56ccd4-f297-4ded-85ab-0d7385f81c1c',
+        app.config['WEB_HOOK_URL'],
         data=json.dumps(data), headers=headers)
     # print(type(response.json()))
     # print(type(response.status_code))
