@@ -11,10 +11,7 @@ from mycaptcha import Captcha
 app = Flask(__name__)
 
 
-
-
 app.secret_key = '123456'
-
 
 
 app.debug = True
