@@ -159,7 +159,9 @@ def logout():
 
     return redirect('/')
 
-
+@app.route("/auth", methods=["GET", "POST"])
+def auth():
+    url = request.cookies.get('')
 
 
 # 获取服务状态
