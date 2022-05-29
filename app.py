@@ -5,6 +5,7 @@ import requests
 from flask import Flask, request, session, make_response, redirect, render_template, url_for, flash, jsonify
 from flask_login import LoginManager, UserMixin, current_user, logout_user, login_user
 from werkzeug.security import check_password_hash
+from UserService import UserService
 
 from mycaptcha import Captcha
 
@@ -91,9 +92,16 @@ def ip():
 
 @app.route('/')
 def index():
-    if not current_user or current_user.is_anonymous:
-        return redirect(url_for('login'))
-    resp = make_response('欢迎你', current_user.displayName)
+    cookies = request.cookies
+    auth_cookie = cookies[app.config["AUTH_COOKIE_NAME"]] if app.config["AUTH_COOKIE_NAME"] in cookies else None
+
+    if auth_cookie:
+        auth_info = auth_cookie.split("#")
+        user_info = User(auth_info[1])
+        pwd = f"{UserService.geneAuthCode(auth_info[1], user_info.get_password_hash())}"
+        if auth_info[0] != pwd:
+            return redirect(url_for('login'))
+        resp = make_response('欢迎你', auth_info[1])
     return resp, 200
 
 
@@ -108,17 +116,26 @@ def get_captcha():
 
 @app.route("/auth")
 def auth():
-    print("current_user", current_user)
-    print(current_user.is_anonymous)
-    if not current_user or current_user.is_anonymous:
-        app.logger.info('auth 没有授权，请登录')
+    # url = request.cookies.get('')
+    cookies = request.cookies
+    auth_cookie = cookies[app.config["AUTH_COOKIE_NAME"]] if app.config["AUTH_COOKIE_NAME"] in cookies else None
+
+    if auth_cookie is None:
+        app.logger.info(f'auth cookie不存在 {auth_cookie}')
         resp = make_response('登录信息过期或错误，请重新登录')
         return resp, 401
 
-    html = """
-    欢迎你 + """ + current_user + """
-    """
-    return html
+    auth_info = auth_cookie.split("#")
+    user_info = User(auth_info[1])
+    pwd = f"{UserService.geneAuthCode(auth_info[1], user_info.get_password_hash())}"
+    if auth_info[0] != pwd:
+        app.logger.info('auth cookie不符合，请登录')
+        resp = make_response('登录信息过期或错误，请重新登录')
+        return resp, 401
+
+    res['msg'] = 'success'
+
+    return res
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -139,9 +156,18 @@ def login():
     print("current_user is_authenticated: ", current_user.is_authenticated)
 
 
-    if current_user and not current_user.is_anonymous:
-        resp = make_response('<meta http-equiv="refresh" content="3; url=' + URL + '" />你已经登录过！不要重复登录！')
-        return resp, 200
+    cookies = request.cookies
+    auth_cookie = cookies[app.config["AUTH_COOKIE_NAME"]] if app.config["AUTH_COOKIE_NAME"] in cookies else None
+    if auth_cookie:
+        auth_info = auth_cookie.split("#")
+
+        print(auth_info)
+        user_info = User(auth_info[1])
+        pwd = f"{UserService.geneAuthCode(auth_info[1], user_info.get_password_hash())}"
+        print(pwd)
+        if auth_info[0] == pwd:
+            resp = make_response('<meta http-equiv="refresh" content="3; url=' + URL + '" />你已经登录过！不要重复登录！')
+            return resp, 200
 
     if 'captcha' not in session:
         mc = Captcha()
@@ -190,10 +216,12 @@ def login():
         res['data'] = {'captcha': mc.base64_png}
         return jsonify(res)
 
-    print("user is_authenticated: ", user.is_authenticated)
-    login_user(user)
-    response = make_response("")
-    response.set_cookie('username', username)
+    app.logger.info(f"登录密码: {password}")
+    res['mgs'] = 'you login!'
+    response = make_response(res)
+    cookies_str = f"{UserService.geneAuthCode(username, user.get_password_hash())}#{username}"
+    print(cookies_str)
+    response.set_cookie(app.config["AUTH_COOKIE_NAME"], cookies_str)
     app.logger.info(f'username: {username} login success!')
 
     if URL:
@@ -202,14 +230,13 @@ def login():
         res['data'] = {'ORIGIN_URL': URL}
         return jsonify(res)
 
-    return 'you login!'
+    return response
 
 
 @app.route('/logout')
 def logout():
     flash('注销成功！', 'success')
     url = request.cookies.get('ORIGIN_URL')
-    logout_user()
 
     return redirect(url)
 
