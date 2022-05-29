@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
     <title>登录认证 - DevOps后台管理系统</title>
-    <link rel="icon" href="favicon.ico" type="image/ico">
+    <link rel="icon" href={{ url_for(
+    'static', filename="images/logo-ico.png") }} type="image/ico">
     <meta name="keywords" content="Admin后台管理系统">
     <meta name="description" content="Admin V4是一个后台管理系统，基于Bootstrap v4.4.1。">
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -38,8 +39,14 @@
         .login-form .has-feedback.row .mdi {
             left: 15px;
         }
-        .error { color: red }
-        .success {color: blue }
+
+        .error {
+            color: red
+        }
+
+        .success {
+            color: blue
+        }
     </style>
 </head>
 
@@ -53,51 +60,29 @@
         {% endif %}
         <span style="color:brown;font-size:12px">警告: 内部系统，非授权不得访问！</span>
     </div>
-    {% if get_flashed_messages() %}
-    <!--p class="error-text" id="error">
-        <ul style="list-style: none;">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-            <li class="{% if category %} text-{{category}} {% else %} text-danger{% endif %}">{{message}}</li>
-            {% endfor %}
-        </ul>
-        {% endif %}
-    {% endwith %}
-    </p-->
 
-    {% endif %}
     <form action="#!" method="post" class="login-form" id="loginform">
 
 
-        <div class="form-group has-feedback">
+        <div class="form-group has-feedback m-0">
 
 
             <span class="mdi mdi-account" aria-hidden="true"></span>
-            {{ form.username(type="text", class="form-control", placeholder="用户名") }}
-            {% for err in form.username.errors %}
-            <p style="color: red">{{ err }}</p>
-            {% endfor %}
-            <!--input type="text" class="form-control" id="username" placeholder="用户名"-->
+            <input type="text" class="form-control" id="username" maxlength="12" placeholder="用户名">
+            <p class="m-0" style="height: 25px"></p>
         </div>
 
-        <div class="form-group has-feedback">
+        <div class="form-group has-feedback m-0">
             <span class="mdi mdi-lock" aria-hidden="true"></span>
-            {{ form.password(type="password", class="form-control", placeholder="密码") }}
-            {% for err in form.password.errors %}
-            <p style="color: red">{{ err }}</p>
-            {% endfor %}
-            <!--input type="password" class="form-control" id="password" placeholder="密码"-->
+            <input type="password" class="form-control" maxlength="16" id="password" placeholder="密码">
+            <p class="m-0" style="height: 25px"></p>
         </div>
 
         <div class="form-group has-feedback row">
             <div class="col-7">
                 <span class="mdi mdi-check-all form-control-feedback" aria-hidden="true"></span>
-                {{ form.captcha(type="text", class="form-control", placeholder="验证码") }}
-                {% for err in form.captcha.errors %}
-                <p style="color: red">{{ err }}</p>
-                {% endfor %}
-                <!--input type="text" name="captcha" id="captcha" class="form-control" placeholder="验证码"-->
+                <input type="text" name="captcha" id="captcha" class="form-control" maxlength="4" placeholder="验证码">
+                <p class="m-0" style="height: 25px"></p>
             </div>
             <div class="col-5 text-right">
                 <img src="{{img_captcha}}" class="pull-right" id="img_captcha" style="cursor: pointer;"
@@ -113,9 +98,7 @@
         </div>
 
         <div class="form-group">
-            {{ form.csrf_token }}
-            {{ form.submit(class="btn btn-block btn-primary", id="bt_login")}}
-            <!--button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button-->
+            <button class="btn btn-block btn-primary" type="submit" id="bt_login">立即登录</button>
         </div>
     </form>
     <p class="text-center text-muted mb-0 flash"></p>
@@ -123,7 +106,7 @@
 <script type="text/javascript" src="/static/js/jquery.min.js"></script>
 <script type="text/javascript" src="/static/js/bootstrap-notify.min.js"></script>
 <script type="text/javascript">
-    $('form').submit(function (){
+    $('form').submit(function () {
         return false;
     });
 
@@ -142,7 +125,7 @@
 
     $(document).ready(function () {
 
-        document.getElementById('captcha').value='';
+        document.getElementById('captcha').value = '';
 
 
         //如果浏览器支持localStorage
@@ -175,6 +158,17 @@
 
         });
 
+        $("input").keyup(function () {
+            value = this.value = this.value.replace(/[^\d|a-zA-Z@!]/g, '');
+
+            // console.log(value);
+            if (value || value.length > 1) {
+                var login_input = $(this);
+                // console.log(login_input)
+                login_input.siblings("p").html("");
+                return false;
+            }
+        });
 
         $("#bt_login").click(function () {
 
@@ -189,39 +183,71 @@
             var login_name = $("#username").val();
             var login_pwd = $("#password").val();
             var captcha = $("#captcha").val();
-            // if (login_name == undefined || login_name.length < 1) {
-            //     $.notify({message: '账号输入错误~~'}, {type: 'warning'});
-            //
-            //     return false;
-            // }
-            // if (login_pwd == undefined || login_pwd.length < 6) {
-            //     $.notify({message: '密码输入错误~~'}, {type: 'warning'});
-            //     return false;
-            // }
-            // if (captcha == undefined || captcha.length < 4) {
-            //     $.notify({message: '验证码输入错误~~'}, {type: 'warning'});
-            //
-            //     return false;
-            // }
+            if (login_name == undefined || login_name.length < 1) {
+                $("#username").siblings("p").addClass("error").html("").append("用户名为空");
+                return false;
+            }
+            if (login_pwd == undefined || login_pwd.length < 1) {
+                $("#password").siblings("p").addClass("error").html("").append("密码格为空");
+                return false;
+            }
+            if (captcha == undefined || captcha.length < 1) {
+                $("#captcha").siblings("p").addClass("error").html("").append("验证码为空");
+                return false;
+            }
             btn_target.addClass("disabled");
             $.ajax({
                 url: "/login",
                 type: "POST",
                 data: {'username': login_name, 'password': login_pwd, 'captcha': captcha},
                 dataType: 'json',
+                timeout: 3000, // 设置超时时间, 超过3秒后执行complete中的操作
                 success: function (res) {
                     btn_target.removeClass("disabled");
                     var callback = null;
                     if (res.code == 200) {
                         callback = function () {
-                            window.location.href = "/";
+                            if (res.data.hasOwnProperty("ORIGIN_URL")) {
+                                window.location.href = res.data.ORIGIN_URL;
+                                console.log(res.data.ORIGIN_URL)
+                            } else {
+                                window.location.href = "/";
+                                console.log(res.code)
+                            }
+
                         }
                     } else {
                         callback = function () {
+                            console.log(res.msg)
                             $.notify({message: res.msg}, {type: 'warning'});
+                            if (res.data.hasOwnProperty("captcha")) {
+                                var img = document.getElementById('img_captcha');
+                                img.src = res.data.captcha
+                            }
                         }
                     }
                     callback()
+                },
+                complete: function (XMLHttpRequest, status) {
+                    console.info("complete=====>", status);
+                    btn_target.removeClass("disabled");
+                    if (status == 'timeout') {
+                        $.notify({message: '访问超时，请联系系统管理员!'}, {
+                            type: 'error',
+                            placement: {from: "top", align: "center"}
+                        });
+                    } else if (status == 'error') {
+                        $.notify({message: '系统内部错误，请联系系统管理员!'}, {
+                            type: 'error',
+                            placement: {from: "top", align: "center"}
+                        });
+                    }
+                    // let local_href = null;
+                    // local_href = function (){
+                    //     window.location.href = window.location.href
+                    // }
+                    // setTimeout(local_href(), "5000")
+
                 }
             })
 

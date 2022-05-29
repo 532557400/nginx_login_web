@@ -20,7 +20,7 @@ class Captcha:
         self.base64_png = self.create()
 
     def create(self):
-        self.code = ''.join(random.sample(self.ca, CAPTCHA_LEN))  # 随机字符，字符个数
+        self.code = ''.join(random.sample(self.ca, CAPTCHA_LEN)).upper()  # 随机字符，字符个数
         # now = time.time()
         #
         # path = './static/captcha/'

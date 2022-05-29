@@ -6,7 +6,6 @@ from flask import Flask, request, session, make_response, redirect, render_templ
 from flask_login import LoginManager, UserMixin, current_user, logout_user, login_user
 from werkzeug.security import check_password_hash
 
-from models import LoginForm
 from mycaptcha import Captcha
 
 app = Flask(__name__)
@@ -59,12 +58,26 @@ class User(UserMixin):
         except:
             print("get password error!")
 
+    def get_id(self):
+        return self.username
 
 users = {}
 
 
 @login_manager.user_loader
 def load_user(user_id):
+    # 从文件中获取密码
+    try:
+        with open(PROFILE_FILE) as f:
+            user_profiles = json.load(f)
+            user_info = user_profiles['dataObjects'][0]
+
+        if user_info is not None:
+            return user_info[0]
+    except:
+        print("get password error!")
+    print("user_id", user_id)
+    print("user_id", user_info)
     if id in users:
         return users[id]
     return None
@@ -95,6 +108,8 @@ def get_captcha():
 
 @app.route("/auth")
 def auth():
+    print("current_user", current_user)
+    print(current_user.is_anonymous)
     if not current_user or current_user.is_anonymous:
         app.logger.info('auth 没有授权，请登录')
         resp = make_response('登录信息过期或错误，请重新登录')
@@ -108,6 +123,7 @@ def auth():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    print("------------------")
     SITE_NAME = ''
 
     if 'ORIGIN_SITE_NAME' in request.cookies:
@@ -117,67 +133,76 @@ def login():
     if 'ORIGIN_URL' in request.cookies:
         URL = request.cookies.get('ORIGIN_URL')
 
-    print(current_user)
-    print(current_user.is_anonymous)
+    print("URL: ", URL)
+
+    print("current_user.is_anonymous: ", current_user.is_anonymous)
+    print("current_user is_authenticated: ", current_user.is_authenticated)
+
 
     if current_user and not current_user.is_anonymous:
         resp = make_response('<meta http-equiv="refresh" content="3; url=' + URL + '" />你已经登录过！不要重复登录！')
         return resp, 200
 
-
-    if request.method == 'GET':
-        form = LoginForm()
+    if 'captcha' not in session:
         mc = Captcha()
         session['captcha'] = mc.code
-        print(mc.code)
-        return render_template('login.html', img_captcha=mc.base64_png, form=form, site_name=SITE_NAME, url=URL)
 
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        captcha = request.form.get('captcha')
-        form = LoginForm(username=username, password=password, captcha=captcha)
-        print("------------------")
-        print(request.form)
+    if request.method == 'GET':
+        mc = Captcha()
+        session['captcha'] = mc.code
+        app.logger.info(f"get new captcha: {mc.code}")
 
-        if form.validate_on_submit():
-            username = username
-            password = password
-            captcha = captcha
+        return render_template('login.html', img_captcha=mc.base64_png, site_name=SITE_NAME, url=URL)
 
-            mc = Captcha()
-            session['captcha'] = mc.code
-            if not captcha.upper() == session['captcha'].upper():
-                app.logger.warning('验证码错误! ')
-                print("captcha: " + request.form['captcha'].upper())
-                print("session captcha: " + session['captcha'].upper())
-                flash('验证码错误，请重新输入', 'danger')
-                # session['captcha'] = mc.code
-                return render_template('login.html', img_captcha=mc.base64_png, form=form, site_name=SITE_NAME, url=URL)
-
-            user = User(username)
-            if user.verify_password(password):
-
-                login_user(form.username)
-
-                response = make_response(redirect('/'))
-                response.set_cookie('username', username)
-                app.logger.info(f'username: {username} login success!')
-
-                if 'ORIGIN_URL' in request.cookies:
-                    url = request.cookies.get('ORIGIN_URL')
-                    print("ORIGIN_URL: ", url)
-                    app.logger.info('重定向到的URL: ' + url)
-                    return redirect(url)
-                return 'you login!'
-
-        # mc = Captcha()
-        # session['captcha'] = mc.code
-        app.logger.info("登录失败，请重试! ")
-        res['msg'] = "登录失败，请重试!"
+    req = request.values
+    username = req['username'] if 'username' in req else ''
+    password = req['password'] if 'password' in req else ''
+    captcha = req['captcha'].upper() if 'captcha' in req else ''
+    if username is None or len(username) < 1:
         res['code'] = -1
+        res['msg'] = "请输入正确的用户名和登录密码~~"
         return jsonify(res)
-        # return render_template('login.html', img_captcha=mc.base64_png, form=form, site_name=SITE_NAME, url=URL)
+
+    if password is None or len(password) < 6:
+        res['code'] = -1
+        res['msg'] = "请输入正确的用户名和登录密码~~"
+        return jsonify(res)
+
+    app.logger.warning(f"验证码: {session['captcha']} 输入: {captcha}")
+    if not captcha == session['captcha']:
+        mc = Captcha()
+        session['captcha'] = mc.code
+        print("new captcha: " + captcha)
+        print("new session captcha: " + session['captcha'])
+
+        res['code'] = -1
+        res['msg'] = "请输入正确的验证码~~"
+        res['data'] = {'captcha': mc.base64_png}
+        return jsonify(res)
+
+    user = User(username)
+    if not user.verify_password(password):
+        app.logger.info("登录失败，请重试! ")
+        mc = Captcha()
+        session['captcha'] = mc.code
+        res['msg'] = "用户不存在，请重试!"
+        res['code'] = -1
+        res['data'] = {'captcha': mc.base64_png}
+        return jsonify(res)
+
+    print("user is_authenticated: ", user.is_authenticated)
+    login_user(user)
+    response = make_response("")
+    response.set_cookie('username', username)
+    app.logger.info(f'username: {username} login success!')
+
+    if URL:
+        app.logger.info('重定向到的URL: ' + URL)
+        # return redirect(URL)
+        res['data'] = {'ORIGIN_URL': URL}
+        return jsonify(res)
+
+    return 'you login!'
 
 
 @app.route('/logout')
