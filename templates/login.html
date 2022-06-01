@@ -81,7 +81,8 @@
         <div class="form-group has-feedback row">
             <div class="col-7">
                 <span class="mdi mdi-check-all form-control-feedback" aria-hidden="true"></span>
-                <input type="text" name="captcha" id="captcha" class="form-control" maxlength="4" placeholder="验证码">
+                <input type="text" name="captcha" id="captcha" class="form-control" minlength="4" maxlength="4"
+                       placeholder="验证码">
                 <p class="m-0" style="height: 25px"></p>
             </div>
             <div class="col-5 text-right">
@@ -117,15 +118,34 @@
         ajax.send()
         ajax.onreadystatechange = function () {
             if (ajax.readyState == 4 && ajax.status == 200) {
-                console.log(ajax.responseText); // 输入相应的内容
+                // console.log(ajax.responseText); // 输入相应的内容
+                document.getElementById('captcha').value = '';
                 img.src = ajax.responseText
             }
         }
     };
 
+    function storage_info(){
+        var storage = window.localStorage;
+
+        //如果勾上,将账号密码存入本地存储,否则清空
+        if ($('#rememberme')[0].checked) {
+            var username = $("#username").val();
+            var password = $("#password").val();
+            // console.log("已点击复选框")
+            storage.setItem("username", username);
+            storage.setItem("password", password);
+
+        } else {
+            // console.log("无点击复选框")
+            storage.setItem("username", "");
+            storage.setItem("password", "");
+        }
+    };
+
     $(document).ready(function () {
 
-        document.getElementById('captcha').value = '';
+        // document.getElementById('captcha').value = '';
 
 
         //如果浏览器支持localStorage
@@ -142,20 +162,7 @@
 
         //记住密码选择框改动时
         $("#rememberme").change(function () {
-            var storage = window.localStorage;
-
-            //如果勾上,将账号密码存入本地存储,否则清空
-            if ($('#rememberme')[0].checked) {
-                var username = $("#username").val();
-                var password = $("#password").val();
-                storage.setItem("username", username);
-                storage.setItem("password", password);
-
-            } else {
-                storage.setItem("username", "");
-                storage.setItem("password", "");
-            }
-
+            storage_info()
         });
 
         $("input").keyup(function () {
@@ -194,7 +201,11 @@
             if (captcha == undefined || captcha.length < 1) {
                 $("#captcha").siblings("p").addClass("error").html("").append("验证码为空");
                 return false;
+            } else if (captcha.length < 4) {
+                $("#captcha").siblings("p").addClass("error").html("").append("验证码错误");
+                return false;
             }
+            storage_info();
             btn_target.addClass("disabled");
             $.ajax({
                 url: "/login",
@@ -218,7 +229,7 @@
                         }
                     } else {
                         callback = function () {
-                            console.log(res.msg)
+                            console.log(res.msg, res.code)
                             $.notify({message: res.msg}, {type: 'warning'});
                             if (res.data.hasOwnProperty("captcha")) {
                                 var img = document.getElementById('img_captcha');
@@ -229,6 +240,10 @@
                     callback()
                 },
                 complete: function (XMLHttpRequest, status) {
+                    let local_href = null;
+                    local_href = function () {
+                        window.location.href = window.location.href
+                    }
                     console.info("complete=====>", status);
                     btn_target.removeClass("disabled");
                     if (status == 'timeout') {
@@ -236,17 +251,14 @@
                             type: 'error',
                             placement: {from: "top", align: "center"}
                         });
+                        local_href()
                     } else if (status == 'error') {
                         $.notify({message: '系统内部错误，请联系系统管理员!'}, {
                             type: 'error',
                             placement: {from: "top", align: "center"}
                         });
+                        local_href()
                     }
-                    // let local_href = null;
-                    // local_href = function (){
-                    //     window.location.href = window.location.href
-                    // }
-                    // setTimeout(local_href(), "5000")
 
                 }
             })

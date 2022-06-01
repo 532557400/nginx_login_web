@@ -2,12 +2,10 @@ import base64
 import random
 import string
 from io import BytesIO
-from flask import make_response
+
 from captcha.image import ImageCaptcha, random_color
 
 CAPTCHA_LEN = 4
-
-
 # string.ascii_letters   包含所有英文字母
 # string.digits          包含0-9的所有数字
 
@@ -27,17 +25,17 @@ class Captcha:
         # if not os.path.exists(path):
         #     os.makedirs(path)
         # self.img = path + str(now) + '.png'
-        img = ImageCaptcha(width=110, height=40, font_sizes=(30, 35, 28))  # 实例化ImageCaptcha类
+        img = ImageCaptcha(width=110, height=60, font_sizes=(30, 35, 28))  # 实例化ImageCaptcha类
+        # img = ImageCaptcha(width=110, height=40)  # 实例化ImageCaptcha类
         # 这是ImageCaptcha自带的初始化内容width=160, height=60, fonts=None, font_sizes=None，可以自己设置
 
-        # RGB = (38, 38, 0)  # 字体色
-        RGB = (131, 94, 118)  # 字体色
+        RGB_color = (38, 38, 0)  # 字体色
+        RGB = (29, 45, 202)  # 字体色
         bgc = (255, 255, 255)  # 背景色
-        color = random_color(50, 180)  # 生成随机颜色
-        print(color)
+        color = random_color(120, 200)  # 生成随机颜色
         image = img.create_captcha_image(self.code, RGB, bgc)
         img.create_noise_dots(image=image, color=color, width=10, number=10)
-        img.create_noise_curve(image=image, color=RGB)
+        img.create_noise_curve(image=image, color=RGB_color)  # image要绘制曲线的图片
         buffer = BytesIO()
         image.save(buffer, "PNG")  # 将Image对象转为二进制存入buffer，因BytesIO()是内存中操作，所以实际是存入内存
         buf_bytes = buffer.getvalue()  # 从内存中取出bytes类型的图片
